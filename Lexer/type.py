@@ -11,7 +11,9 @@ class TokenType(Enum):
     WHITESPACE = auto()
     NEWLINE = auto()
     EOF = auto()
+    PUNCTUATION = auto()
 
 KEYWORDS = {'def', 'if', 'else', 'return'}
 OPERATORS = {'+', '-', '*', '/', '=', '==', '!='}
 PARENTHESIS = {'(', ')'}
+PUNCTUATION = {',', '"', ':'}

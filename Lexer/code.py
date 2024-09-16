@@ -1,7 +1,7 @@
-
 from lexer import Lexer
 from type import TokenType
-
+from parserError import Parser, ParserError 
+ 
 
 code = """
 def suma(a, b):
@@ -13,9 +13,19 @@ else:
     print("Resultado:", False)
 """
 
+# Instancia el lexer y genera los tokens
 lexico = Lexer(code)
+tokens = lexico.get_tokens()
 
-token = lexico.get_next_token()
-while token.type != TokenType.EOF:
+# Imprime los tokens (opcional, para depuración)
+for token in tokens:
     print(token)
-    token = lexico.get_next_token()
+
+
+parser = Parser(tokens)
+
+# Intentamos hacer el análisis sintáctico
+try:
+    parser.parse()
+except ParserError as e:
+    print(f"Error sintáctico: {e}")

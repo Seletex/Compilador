@@ -1,6 +1,9 @@
 from type import TokenType
 from token import Token
-from type import KEYWORDS, OPERATORS, PARENTHESIS
+from type import KEYWORDS, OPERATORS, PARENTHESIS, PUNCTUATION
+
+# Agregar un conjunto de palabras clave en español
+spanish_keywords = {'función', 'si', 'entonces', 'mientras', 'para'}
 
 class Lexer:
     def __init__(self, code):
@@ -35,11 +38,11 @@ class Lexer:
 
     def get_string(self):
         result = ''
-        self.advance()  # Skip the opening quote
+        self.advance()  # Saltar la comilla de apertura
         while self.current_char is not None and self.current_char != '"':
             result += self.current_char
             self.advance()
-        self.advance()  # Skip the closing quote
+        self.advance()  # Saltar la comilla de cierre
         return result
 
     def get_next_token(self):
@@ -69,6 +72,11 @@ class Lexer:
                 self.pos += 1
                 return token
 
+            if self.current_char in PUNCTUATION:
+                token = Token(TokenType.PUNCTUATION, self.current_char)
+                self.pos += 1
+                return token
+
             self.pos += 1
 
         return Token(TokenType.EOF, None)
@@ -81,9 +89,25 @@ class Lexer:
 
     def _identifier(self):
         start_pos = self.pos
-        while self.pos < len(self.code) and self.code[self.pos].isalnum():
+        while self.pos < len(self.code) and (self.code[self.pos].isalnum() or self.code[self.pos] == '_'):
             self.pos += 1
         value = self.code[start_pos:self.pos]
-        if value in KEYWORDS:
+
+        # Verificar si el identificador es una palabra clave en español
+        if value in spanish_keywords:
             return Token(TokenType.KEYWORD, value)
+
+        # Verificar si el identificador es una cadena de texto
+        if value.startswith('"') and value.endswith('"'):
+            return Token(TokenType.STRING, value)
+
         return Token(TokenType.IDENTIFIER, value)
+
+    def get_tokens(self):
+        tokens = []
+        token = self.get_next_token()
+        while token.type != TokenType.EOF:
+            tokens.append(token)
+            token = self.get_next_token()
+        tokens.append(token)  # Añadir el token EOF
+        return tokens
