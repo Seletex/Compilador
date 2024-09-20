@@ -2,18 +2,19 @@ import re
 from enum import Enum, auto
 
 class TokenType(Enum):
-    KEYWORD = auto()
     IDENTIFIER = auto()
-    OPERATOR = auto()
     INTEGER = auto()
-    STRINGS = auto()
+    STRING = auto()
+    OPERATOR = auto()
     PARENTHESIS = auto()
-    WHITESPACE = auto()
+    PUNCTUATION = auto()
+    KEYWORD = auto()
     NEWLINE = auto()
     EOF = auto()
-    PUNCTUATION = auto()
+    COMMENT = auto()
+    BOOLEAN = auto()
 
 KEYWORDS = {'def', 'if', 'else', 'return'}
 OPERATORS = {'+', '-', '*', '/', '=', '==', '!='}
 PARENTHESIS = {'(', ')'}
-PUNCTUATION = {',', '"', ':'}
+PUNCTUATION = {':', '"', ','}

@@ -1,17 +1,28 @@
+from parserError import ParserError
 from type import TokenType
 from token import Token
 from type import KEYWORDS, OPERATORS, PARENTHESIS, PUNCTUATION
 
 # Agregar un conjunto de palabras clave en español
-spanish_keywords = {'función', 'si', 'entonces', 'mientras', 'para'}
+SPANISH_KEYWORDS = {'función', 'si', 'entonces', 'mientras', 'para','resultado'}
 
 class Lexer:
     def __init__(self, code):
         self.code = code
         self.pos = 0
-        self.current_char = code[self.pos]
+        self.line = 1
+        self.column = 1
+        self.current_char = code[self.pos] if code else None
+        self.keywords = KEYWORDS
 
     def advance(self):
+        """Avanza al siguiente carácter en el código fuente."""
+        if self.current_char == '\n':
+            self.line += 1
+            self.column = 1  # Reiniciar la columna al comienzo de una nueva línea
+        else:
+            self.column += 1
+
         self.pos += 1
         if self.pos < len(self.code):
             self.current_char = self.code[self.pos]
@@ -19,95 +30,105 @@ class Lexer:
             self.current_char = None  # EOF
 
     def skip_whitespace(self):
+        """Ignora los espacios en blanco."""
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
 
     def get_identifier(self):
+        """Obtiene un identificador o una palabra clave."""
         result = ''
+        start_column = self.column
         while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
             result += self.current_char
             self.advance()
-        return result
+        return Token(TokenType.IDENTIFIER, result, self.line, start_column)
 
     def get_number(self):
+        """Obtiene un número entero."""
         result = ''
+        start_column = self.column
         while self.current_char is not None and self.current_char.isdigit():
             result += self.current_char
             self.advance()
-        return result
+        return Token(TokenType.INTEGER, result, self.line, start_column)
 
     def get_string(self):
+        """Obtiene una cadena de texto, manejando comillas."""
         result = ''
+        start_column = self.column
         self.advance()  # Saltar la comilla de apertura
         while self.current_char is not None and self.current_char != '"':
             result += self.current_char
             self.advance()
-        self.advance()  # Saltar la comilla de cierre
-        return result
+
+        if self.current_char == '"':
+            self.advance()  # Saltar la comilla de cierre
+            return Token(TokenType.STRING, result, self.line, start_column)
+        else:
+            raise ParserError(f"Error léxico: cadena sin cerrar en línea {self.line}, columna {self.column}")
 
     def get_next_token(self):
-        while self.pos < len(self.code):
-            self.current_char = self.code[self.pos]
-
+        """Obtiene el siguiente token del código fuente."""
+        while self.current_char is not None:
+       
+            # Ignorar espacios en blanco
+            self.skip_whitespace()
+            # Ignorar espacios y saltos de línea
             if self.current_char.isspace():
                 if self.current_char == '\n':
-                    self.pos += 1
-                    return Token(TokenType.NEWLINE, '\\n')
-                self.pos += 1
+                    self.advance()
+                    return Token(TokenType.NEWLINE, '\\n', self.line, self.column)
+                self.advance()
                 continue
 
+            # Detectar números
             if self.current_char.isdigit():
-                return self._integer()
+                return self.get_number()
 
+            # Detectar identificadores o palabras clave
             if self.current_char.isalpha():
-                return self._identifier()
+                identifier = self.get_identifier().value
+                if identifier in SPANISH_KEYWORDS:
+                    return Token(TokenType.KEYWORD, identifier, self.line, self.column)
+                return Token(TokenType.IDENTIFIER, identifier, self.line, self.column)
 
+            # Detectar operadores
             if self.current_char in OPERATORS:
-                token = Token(TokenType.OPERATOR, self.current_char)
-                self.pos += 1
+                token = Token(TokenType.OPERATOR, self.current_char, self.line, self.column)
+                self.advance()
                 return token
 
+            # Detectar paréntesis
             if self.current_char in PARENTHESIS:
-                token = Token(TokenType.PARENTHESIS, self.current_char)
-                self.pos += 1
+                token = Token(TokenType.PARENTHESIS, self.current_char, self.line, self.column)
+                self.advance()
                 return token
 
+            # Detectar puntuación
             if self.current_char in PUNCTUATION:
-                token = Token(TokenType.PUNCTUATION, self.current_char)
-                self.pos += 1
+                token = Token(TokenType.PUNCTUATION, self.current_char, self.line, self.column)
+                self.advance()
                 return token
 
-            self.pos += 1
+            # Detectar cadenas de texto
+            if self.current_char == '"':
+                return self.get_string()
 
-        return Token(TokenType.EOF, None)
+            # Si encuentra un carácter desconocido
+            self.advance()
+            raise ParserError(f"Error léxico: carácter inesperado '{self.current_char}' "
+                             f"en línea {self.line}, columna {self.column}")
 
-    def _integer(self):
-        start_pos = self.pos
-        while self.pos < len(self.code) and self.code[self.pos].isdigit():
-            self.pos += 1
-        return Token(TokenType.INTEGER, self.code[start_pos:self.pos])
-
-    def _identifier(self):
-        start_pos = self.pos
-        while self.pos < len(self.code) and (self.code[self.pos].isalnum() or self.code[self.pos] == '_'):
-            self.pos += 1
-        value = self.code[start_pos:self.pos]
-
-        # Verificar si el identificador es una palabra clave en español
-        if value in spanish_keywords:
-            return Token(TokenType.KEYWORD, value)
-
-        # Verificar si el identificador es una cadena de texto
-        if value.startswith('"') and value.endswith('"'):
-            return Token(TokenType.STRING, value)
-
-        return Token(TokenType.IDENTIFIER, value)
+        return Token(TokenType.EOF, None, self.line, self.column)
+        
 
     def get_tokens(self):
+        """Obtiene todos los tokens del código fuente."""
         tokens = []
-        token = self.get_next_token()
-        while token.type != TokenType.EOF:
-            tokens.append(token)
+               
+        while True:
             token = self.get_next_token()
-        tokens.append(token)  # Añadir el token EOF
+            if token.type == TokenType.EOF:
+                break
+            tokens.append(token)
         return tokens
