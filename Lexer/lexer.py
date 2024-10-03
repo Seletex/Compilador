@@ -1,10 +1,13 @@
-from parserError import ParserError
+from parserError import ParserError,Parser
 from type import TokenType
 from token import Token
 from type import KEYWORDS, OPERATORS, PARENTHESIS, PUNCTUATION
 
 # Agregar un conjunto de palabras clave en español
-SPANISH_KEYWORDS = {'función', 'si', 'entonces', 'mientras', 'para','resultado'}
+SPANISH_KEYWORDS = {'función', 'si', 'entonces', 'mientras', 'para', 'resultado', 'main'}
+
+# Agregar operadores válidos al conjunto de operadores
+OPERATORS = {'+', '-', '*', '/', '>', '<', '>=', '<=', '==', '!=', '='}
 
 class Lexer:
     def __init__(self, code):
@@ -41,6 +44,10 @@ class Lexer:
         while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
             result += self.current_char
             self.advance()
+
+        # Verifica si es una palabra clave
+        if result in SPANISH_KEYWORDS:
+            return Token(TokenType.KEYWORD, result, self.line, start_column)
         return Token(TokenType.IDENTIFIER, result, self.line, start_column)
 
     def get_number(self):
@@ -65,21 +72,29 @@ class Lexer:
             self.advance()  # Saltar la comilla de cierre
             return Token(TokenType.STRING, result, self.line, start_column)
         else:
-            raise ParserError(f"Error léxico: cadena sin cerrar en línea {self.line}, columna {self.column}")
+            raise ParserError(f"Error léxico: cadena sin cerrar", self.line, self.column)
+
+    def get_operator(self):
+        """Obtiene un operador simple o compuesto como '>', '>=', etc."""
+        result = self.current_char
+        start_column = self.column
+        self.advance()
+
+        # Manejo de operadores compuestos como '>=', '<=', '==', '!='
+        if self.current_char == '=' and result in {'>', '<', '=', '!'}:
+            result += self.current_char
+            self.advance()
+
+        return Token(TokenType.OPERATOR, result, self.line, start_column)
 
     def get_next_token(self):
         """Obtiene el siguiente token del código fuente."""
         while self.current_char is not None:
-       
             # Ignorar espacios en blanco
             self.skip_whitespace()
-            # Ignorar espacios y saltos de línea
-            if self.current_char.isspace():
-                if self.current_char == '\n':
-                    self.advance()
-                    return Token(TokenType.NEWLINE, '\\n', self.line, self.column)
-                self.advance()
-                continue
+
+            if self.current_char is None:
+                break
 
             # Detectar números
             if self.current_char.isdigit():
@@ -87,12 +102,13 @@ class Lexer:
 
             # Detectar identificadores o palabras clave
             if self.current_char.isalpha():
-                identifier = self.get_identifier().value
-                if identifier in SPANISH_KEYWORDS:
-                    return Token(TokenType.KEYWORD, identifier, self.line, self.column)
-                return Token(TokenType.IDENTIFIER, identifier, self.line, self.column)
+                return self.get_identifier()
 
             # Detectar operadores
+            if self.current_char in {'>', '<', '=', '!'}:
+                return self.get_operator()
+
+            # Detectar otros operadores simples
             if self.current_char in OPERATORS:
                 token = Token(TokenType.OPERATOR, self.current_char, self.line, self.column)
                 self.advance()
@@ -114,18 +130,19 @@ class Lexer:
             if self.current_char == '"':
                 return self.get_string()
 
-            # Si encuentra un carácter desconocido
-            self.advance()
-            raise ParserError(f"Error léxico: carácter inesperado '{self.current_char}' "
-                             f"en línea {self.line}, columna {self.column}")
+            # Manejo de caracteres desconocidos o no reconocidos
+            else:
+                char = self.current_char
+                self.advance()
+                raise ParserError(f"Error léxico en la línea {self.line}, columna {self.column}: "
+                          f"Se esperaba un identificador, número, operador o palabra clave, pero se encontró '{char}'",
+                          self.line, self.column)
 
         return Token(TokenType.EOF, None, self.line, self.column)
-        
 
     def get_tokens(self):
         """Obtiene todos los tokens del código fuente."""
         tokens = []
-               
         while True:
             token = self.get_next_token()
             if token.type == TokenType.EOF:

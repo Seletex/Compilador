@@ -1,16 +1,21 @@
-from lexer import Lexer
-from type import TokenType
-from parserError import Parser, ParserError 
+import sys
+import os
 
 
+
+from lexer import Lexer  
+from parserError import ParserError, Parser 
+from type import TokenType  
+
+# Código fuente para analizar
 code = """
-def suma(a, b)
+def suma(a,b):
     return a + b
 
 if suma(3, 5) > 5:
     print("Resultado: ", True)
 else:
-    print("Resultado: , False)
+    print("Resultado: ", False)
 """
 
 # Instancia el lexer y genera los tokens

@@ -15,6 +15,6 @@ class TokenType(Enum):
     BOOLEAN = auto()
 
 KEYWORDS = {'def', 'if', 'else', 'return'}
-OPERATORS = {'+', '-', '*', '/', '=', '==', '!='}
+OPERATORS = {'+', '-', '*', '/', '=', '==', '!=', '<', '>', '<=', '>='}
+PUNCTUATION = {'(', ')', '[', ']', '{', '}', ',', ';','"',':'}
 PARENTHESIS = {'(', ')'}
-PUNCTUATION = {':', '"', ','}
