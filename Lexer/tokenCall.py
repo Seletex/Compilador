@@ -1,4 +1,4 @@
-class Token:
+class TokenCall:
     def __init__(self, type_, value, line=None, column=None):
         self.type = type_
         self.value = value

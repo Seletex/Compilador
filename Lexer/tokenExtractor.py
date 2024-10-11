@@ -1,8 +1,6 @@
 from tokenize import Token
 from errorHandler import ErrorHandler
-from lexer import SPANISH_KEYWORDS
 from type import TokenType
-
 
 class TokenExtractor:
     def __init__(self, lexer):
@@ -10,6 +8,9 @@ class TokenExtractor:
 
     def get_identifier(self):
         """Obtiene un identificador o una palabra clave."""
+        # Mover la importación aquí para evitar la importación circular
+        from lexer import SPANISH_KEYWORDS
+        
         result = ''
         start_column = self.lexer.position_manager.column
         while self.lexer.position_manager.current_char is not None and (self.lexer.position_manager.current_char.isalnum() or self.lexer.position_manager.current_char == '_'):

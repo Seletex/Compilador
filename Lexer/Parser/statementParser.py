@@ -6,7 +6,6 @@ from Parser.parserBase import ParserBase
 from Parser.returnStatementParser import ReturnStatementParser
 from type import TokenType
 
-
 class StatementParser(ParserBase):
     def __init__(self, tokens, pos):
         super().__init__(tokens)

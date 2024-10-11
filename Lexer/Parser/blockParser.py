@@ -1,7 +1,5 @@
 from Parser.parserBase import ParserBase
-from Parser.statementParser import StatementParser
 from type import TokenType
-
 
 class BlockParser(ParserBase):
     def __init__(self, tokens, pos):
@@ -17,6 +15,8 @@ class BlockParser(ParserBase):
             self.advance()
 
         while self.current_token.type != TokenType.EOF and self.current_token.type != TokenType.NEWLINE:
+            # Mueve la importación aquí para evitar el ciclo
+            from Parser.statementParser import StatementParser
             statement_parser = StatementParser(self.tokens, self.pos)
             statement_parser.statement()  # Procesa una declaración dentro del bloque
             self.pos = statement_parser.pos

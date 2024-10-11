@@ -1,7 +1,5 @@
-from Parser.argumentListParser import ArgumentListParser
 from Parser.parserBase import ParserBase
 from type import TokenType
-
 
 class ExpressionParser(ParserBase):
     def __init__(self, tokens, pos):
@@ -17,7 +15,11 @@ class ExpressionParser(ParserBase):
             self.eat(TokenType.IDENTIFIER)
             if self.current_token.type == TokenType.PARENTHESIS and self.current_token.value == '(':
                 self.eat(TokenType.PARENTHESIS, '(')  # Consume '('
+                
+                # Mueve la importación aquí
+                from Parser.argumentListParser import ArgumentListParser
                 argument_list_parser = ArgumentListParser(self.tokens, self.pos)
+                
                 argument_list_parser.argument_list()
                 self.pos = argument_list_parser.pos  # Actualiza la posición
                 self.eat(TokenType.PARENTHESIS, ')')  # Espera el cierre de ')'
