@@ -50,11 +50,10 @@ class Parser:
         print(f"Analizando declaración: {self.current_token}")  # Para trazabilidad
 
         if self.current_token.type == TokenType.KEYWORD:
-            if self.current_token.type == TokenType.KEYWORD:
-                if self.current_token.value == "def":
-                    self.eat(TokenType.KEYWORD, "def")
-                    self.eat(TokenType.IDENTIFIER)  # Esperamos el nombre de la función
-                    self.function_definition()
+            if self.current_token.value == "def":
+                self.eat(TokenType.KEYWORD, "def")
+                self.eat(TokenType.IDENTIFIER)  # Esperamos el nombre de la función
+                self.function_definition()
             elif self.current_token.value == "if":
                 self.if_statement()
             elif self.current_token.value == "return":
@@ -77,6 +76,31 @@ class Parser:
                 self.current_token.line,
                 self.current_token.column
             )
+    def function_definition(self):
+        """Analiza la definición de una función."""
+        self.eat(TokenType.PARENTHESIS, "(")  # Esperamos un paréntesis de apertura
+
+        # Analizar los parámetros de la función (si los hay)
+        if self.current_token.type != TokenType.PARENTHESIS:
+            self.parameters()
+
+        self.eat(TokenType.PARENTHESIS, ")")  # Esperamos un paréntesis de cierre
+        self.eat(TokenType.NEWLINE)  # Consumimos el salto de línea
+
+        # Analizar el cuerpo de la función
+        self.eat(TokenType.INDENT)  # Consumimos la indentación
+        self.block()
+        self.eat(TokenType.DEDENT)  # Consumimos la desindentación
+
+    def parameters(self):
+        """Analiza la lista de parámetros de una función."""
+        self.eat(TokenType.IDENTIFIER)  # Esperamos el primer parámetro
+
+        while self.current_token.type == TokenType.PUNCTUATION and self.current_token.value == ",":
+            self.eat(TokenType.PUNCTUATION, ",")
+            self.eat(TokenType.IDENTIFIER)  # Esperamos el siguiente parámetro
+
+    
 
     def expression(self):
         """Analiza una expresión básica que puede contener paréntesis."""

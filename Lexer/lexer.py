@@ -1,4 +1,9 @@
-from parserError import ParserError,Parser
+from errorHandler import ErrorHandler
+from positionManager import PositionManager
+from tokenExtractor import TokenExtractor
+from tokenFetcher import TokenFetcher
+from whitheSpaceSkipper import WhitespaceSkipper
+from Parser.lexicalError import LexicalError
 from type import TokenType
 from token import Token
 from type import KEYWORDS, OPERATORS, PARENTHESIS, PUNCTUATION
@@ -12,140 +17,84 @@ OPERATORS = {'+', '-', '*', '/', '>', '<', '>=', '<=', '==', '!=', '='}
 class Lexer:
     def __init__(self, code):
         self.code = code
-        self.pos = 0
-        self.line = 1
-        self.column = 1
-        self.current_char = code[self.pos] if code else None
-        self.keywords = KEYWORDS
-
-    def advance(self):
-        """Avanza al siguiente carácter en el código fuente."""
-        if self.current_char == '\n':
-            self.line += 1
-            self.column = 1  # Reiniciar la columna al comienzo de una nueva línea
-        else:
-            self.column += 1
-
-        self.pos += 1
-        if self.pos < len(self.code):
-            self.current_char = self.code[self.pos]
-        else:
-            self.current_char = None  # EOF
-
-    def skip_whitespace(self):
-        """Ignora los espacios en blanco."""
-        while self.current_char is not None and self.current_char.isspace():
-            self.advance()
-
-    def get_identifier(self):
-        """Obtiene un identificador o una palabra clave."""
-        result = ''
-        start_column = self.column
-        while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
-            result += self.current_char
-            self.advance()
-
-        # Verifica si es una palabra clave
-        if result in SPANISH_KEYWORDS:
-            return Token(TokenType.KEYWORD, result, self.line, start_column)
-        return Token(TokenType.IDENTIFIER, result, self.line, start_column)
-
-    def get_number(self):
-        """Obtiene un número entero."""
-        result = ''
-        start_column = self.column
-        while self.current_char is not None and self.current_char.isdigit():
-            result += self.current_char
-            self.advance()
-        return Token(TokenType.INTEGER, result, self.line, start_column)
-
-    def get_string(self):
-        """Obtiene una cadena de texto, manejando comillas."""
-        result = ''
-        start_column = self.column
-        self.advance()  # Saltar la comilla de apertura
-        while self.current_char is not None and self.current_char != '"':
-            result += self.current_char
-            self.advance()
-
-        if self.current_char == '"':
-            self.advance()  # Saltar la comilla de cierre
-            return Token(TokenType.STRING, result, self.line, start_column)
-        else:
-            raise ParserError(f"Error léxico: cadena sin cerrar", self.line, self.column)
-
-    def get_operator(self):
-        """Obtiene un operador simple o compuesto como '>', '>=', etc."""
-        result = self.current_char
-        start_column = self.column
-        self.advance()
-
-        # Manejo de operadores compuestos como '>=', '<=', '==', '!='
-        if self.current_char == '=' and result in {'>', '<', '=', '!'}:
-            result += self.current_char
-            self.advance()
-
-        return Token(TokenType.OPERATOR, result, self.line, start_column)
+        self.position = 0
+        
+        self.tokens = []
+        self.current_indent_level = 0
+        self.position_manager = PositionManager(self)
+        self.token_extractor = TokenExtractor(self)
+        self.whitespace_skipper = WhitespaceSkipper(self.position_manager)
+        self.token_fetcher = TokenFetcher(self)
 
     def get_next_token(self):
         """Obtiene el siguiente token del código fuente."""
-        while self.current_char is not None:
-            # Ignorar espacios en blanco
-            self.skip_whitespace()
+        while self.position_manager.current_char is not None:
+            self.whitespace_skipper.skip_whitespace()
 
-            if self.current_char is None:
+            if self.position_manager.current_char is None:
                 break
 
             # Detectar números
-            if self.current_char.isdigit():
-                return self.get_number()
+            if self.position_manager.current_char.isdigit():
+                return self.token_extractor.get_number()
 
             # Detectar identificadores o palabras clave
-            if self.current_char.isalpha():
-                return self.get_identifier()
+            if self.position_manager.current_char.isalpha():
+                return self.token_extractor.get_identifier()
 
             # Detectar operadores
-            if self.current_char in {'>', '<', '=', '!'}:
-                return self.get_operator()
+            if self.position_manager.current_char in {'>', '<', '=', '!'}:
+                return self.token_extractor.get_operator()
 
             # Detectar otros operadores simples
-            if self.current_char in OPERATORS:
-                token = Token(TokenType.OPERATOR, self.current_char, self.line, self.column)
-                self.advance()
+            if self.position_manager.current_char in OPERATORS:
+                token = Token(TokenType.OPERATOR, self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
+                self.position_manager.advance()
                 return token
 
             # Detectar paréntesis
-            if self.current_char in PARENTHESIS:
-                token = Token(TokenType.PARENTHESIS, self.current_char, self.line, self.column)
-                self.advance()
+            if self.position_manager.current_char in PARENTHESIS:
+                token = Token(TokenType.PARENTHESIS, self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
+                self.position_manager.advance()
                 return token
 
             # Detectar puntuación
-            if self.current_char in PUNCTUATION:
-                token = Token(TokenType.PUNCTUATION, self.current_char, self.line, self.column)
-                self.advance()
+            if self.position_manager.current_char in PUNCTUATION:
+                token = Token(TokenType.PUNCTUATION, self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
+                self.position_manager.advance()
                 return token
 
             # Detectar cadenas de texto
-            if self.current_char == '"':
-                return self.get_string()
+            if self.position_manager.current_char == '"':
+                return self.token_extractor.get_string()
 
-            # Manejo de caracteres desconocidos o no reconocidos
+            # Manejo de caracteres desconocidos
             else:
-                char = self.current_char
-                self.advance()
-                raise ParserError(f"Error léxico en la línea {self.line}, columna {self.column}: "
-                          f"Se esperaba un identificador, número, operador o palabra clave, pero se encontró '{char}'",
-                          self.line, self.column)
+                ErrorHandler.handle_unknown_character(self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
 
-        return Token(TokenType.EOF, None, self.line, self.column)
-
+        return Token(TokenType.EOF, None, self.position_manager.line, self.position_manager.column)
     def get_tokens(self):
-        """Obtiene todos los tokens del código fuente."""
-        tokens = []
-        while True:
-            token = self.get_next_token()
-            if token.type == TokenType.EOF:
-                break
-            tokens.append(token)
-        return tokens
+        # Lógica para analizar el código y generar tokens
+        lines = self.code.split('\n')
+        for line in lines:
+            stripped_line = line.lstrip()
+            indent_level = len(line) - len(stripped_line)
+
+            if indent_level > self.current_indent_level:
+                self.tokens.append(Token(TokenType.INDENT, None, self.current_indent_level))
+                self.current_indent_level = indent_level
+            elif indent_level < self.current_indent_level:
+                while self.current_indent_level > indent_level:
+                    self.tokens.append(Token(TokenType.DEDENT, None, self.current_indent_level))
+                    self.current_indent_level -= 4  # Ajusta según tu lógica de indentación
+
+            # Continuar con la generación de otros tokens
+            # Aquí iría tu lógica para otros tokens como IDENTIFIER, KEYWORD, etc.
+
+            # Ejemplo para NEWLINE
+            if line.strip() == '':
+                self.tokens.append(Token(TokenType.NEWLINE, None, self.current_indent_level))
+
+        self.tokens.append(Token(TokenType.EOF, None, ...))  # Añadir token EOF al final
+        return self.tokens
+

@@ -1,13 +1,11 @@
 import sys
 import os
+from Parser.programParser import ProgramParser
+from lexer import Lexer
+from type import TokenType
 
 
-
-from lexer import Lexer  
-from parserError import ParserError, Parser 
-from type import TokenType  
-
-# Código fuente para analizar
+# Código a analizar
 code = """
 def suma(a,b):
     return a + b
@@ -28,11 +26,11 @@ for token in tokens:
     print(token)
 
 # Instancia el parser con los tokens generados
-parser = Parser(tokens)
+program_parser = ProgramParser(tokens)
 
 # Intentamos hacer el análisis sintáctico
 try:
-    parser.parse()
+    program_parser.parse()  # Llama al método parse de ProgramParser
     print("El código es sintácticamente correcto.")
-except ParserError as excepcion:
-    print(f"Error sintáctico: {excepcion}")
+except Exception as e:  # Captura cualquier error lanzado por las clases de parser
+    print(f"Ocurrió un error durante el análisis: {e}")

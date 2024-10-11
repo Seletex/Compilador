@@ -13,6 +13,8 @@ class TokenType(Enum):
     EOF = auto()
     COMMENT = auto()
     BOOLEAN = auto()
+    INDENT = auto()  # Nuevo tipo de token para indentación
+    DEDENT = auto()  # Nuevo tipo de token para desindentación
 
 KEYWORDS = {'def', 'if', 'else', 'return'}
 OPERATORS = {'+', '-', '*', '/', '=', '==', '!=', '<', '>', '<=', '>='}
