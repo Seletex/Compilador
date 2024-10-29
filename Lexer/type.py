@@ -11,12 +11,9 @@ class TokenType(Enum):
     KEYWORD = auto()
     NEWLINE = auto()
     EOF = auto()
-    COMMENT = auto()
-    BOOLEAN = auto()
-    INDENT = auto()  # Nuevo tipo de token para indentación
-    DEDENT = auto()  # Nuevo tipo de token para desindentación
+    
 
 KEYWORDS = {'def', 'if', 'else', 'return'}
 OPERATORS = {'+', '-', '*', '/', '=', '==', '!=', '<', '>', '<=', '>='}
 PUNCTUATION = {'(', ')', '[', ']', '{', '}', ',', ';','"',':'}
-PARENTHESIS = {'(', ')'}
+

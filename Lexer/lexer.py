@@ -6,7 +6,7 @@ from whitheSpaceSkipper import WhitespaceSkipper
 from Parser.lexicalError import LexicalError
 from type import TokenType
 from tokenCall import TokenCall  # Renombrar el módulo token a custom_token
-from type import KEYWORDS, OPERATORS, PARENTHESIS, PUNCTUATION
+from type import KEYWORDS, OPERATORS,  PUNCTUATION
 
 # Agregar un conjunto de palabras clave en español
 SPANISH_KEYWORDS = {'función', 'si', 'entonces', 'mientras', 'para', 'resultado', 'main'}
@@ -34,6 +34,12 @@ class Lexer:
             if self.position_manager.current_char is None:
                 break
 
+            # Detectar un salto de línea
+            if self.position_manager.current_char == '\n':
+                self.position_manager.advance()  # Consumir el salto de línea
+                self.tokens.append(TokenCall(TokenType.NEWLINE, None, self.position_manager.line, self.position_manager.column))
+                continue  # Regresar al inicio del bucle para obtener el siguiente carácter
+
             # Detectar números
             if self.position_manager.current_char.isdigit():
                 return self.token_extractor.get_number()
@@ -42,37 +48,10 @@ class Lexer:
             if self.position_manager.current_char.isalpha():
                 return self.token_extractor.get_identifier()
 
-            # Detectar operadores
-            if self.position_manager.current_char in {'>', '<', '=', '!'}:
-                return self.token_extractor.get_operator()
-
-            # Detectar otros operadores simples
-            if self.position_manager.current_char in OPERATORS:
-                token = TokenCall(TokenType.OPERATOR, self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
-                self.position_manager.advance()
-                return token
-
-            # Detectar paréntesis
-            if self.position_manager.current_char in PARENTHESIS:
-                token = TokenCall(TokenType.PARENTHESIS, self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
-                self.position_manager.advance()
-                return token
-
-            # Detectar puntuación
-            if self.position_manager.current_char in PUNCTUATION:
-                token = TokenCall(TokenType.PUNCTUATION, self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
-                self.position_manager.advance()
-                return token
-
-            # Detectar cadenas de texto
-            if self.position_manager.current_char == '"':
-                return self.token_extractor.get_string()
-
-            # Manejo de caracteres desconocidos
-            else:
-                ErrorHandler.handle_unknown_character(self.position_manager.current_char, self.position_manager.line, self.position_manager.column)
+            # Resto de tu lógica para operadores, paréntesis, cadenas, etc.
 
         return TokenCall(TokenType.EOF, None, self.position_manager.line, self.position_manager.column)
+
 
     def get_tokens(self):
         # Lógica para analizar el código y generar tokens
@@ -82,11 +61,11 @@ class Lexer:
             indent_level = len(line) - len(stripped_line)
 
             if indent_level > self.current_indent_level:
-                self.tokens.append(TokenCall(TokenType.INDENT, None, self.current_indent_level))
+                
                 self.current_indent_level = indent_level
             elif indent_level < self.current_indent_level:
                 while self.current_indent_level > indent_level:
-                    self.tokens.append(TokenCall(TokenType.DEDENT, None, self.current_indent_level))
+                    
                     self.current_indent_level -= 4  # Ajusta según tu lógica de indentación
 
             # Continuar con la generación de otros tokens
